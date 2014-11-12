@@ -125,7 +125,7 @@ void parseOptions(int argc, char** argv)
     for (int i = 1; i < argc; i++){
         char*   arg = argv[i];
         if (arg[0] == '-'){
-            if (oneof(arg,"h,help")) fprintf(stderr, doc, opt_bdd_thres, opt_sort_thres, opt_goal_bias), exit(0);
+            if (oneof(arg,"h,help")) printf(doc, opt_bdd_thres, opt_sort_thres, opt_goal_bias), exit(0);
 
             else if (oneof(arg, "ca,adders" )) opt_convert = ct_Adders;
             else if (oneof(arg, "cs,sorters")) opt_convert = ct_Sorters;
@@ -166,20 +166,20 @@ void parseOptions(int argc, char** argv)
             else if (oneof(arg, "v2"        )) opt_verbosity = 2;
 
             else
-                fprintf(stderr, "ERROR! Invalid command line option: %s\n", argv[i]), exit(1);
+                printf("ERROR! Invalid command line option: %s\n", argv[i]), exit(1);
 
         }else
             args.push(arg);
     }
 
     if (args.size() == 0)
-        fprintf(stderr, doc, opt_bdd_thres, opt_sort_thres, opt_goal_bias), exit(0);
+        printf(doc, opt_bdd_thres, opt_sort_thres, opt_goal_bias), exit(0);
     if (args.size() >= 1)
         opt_input = args[0];
     if (args.size() == 2)
         opt_result = args[1];
     else if (args.size() > 2)
-        fprintf(stderr, "ERROR! Too many files specified on commandline.\n"),
+        printf("ERROR! Too many files specified on commandline.\n"),
         exit(1);
 }
 

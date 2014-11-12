@@ -79,8 +79,8 @@ template <> struct STATIC_ASSERTION_FAILURE<true>{};
 //#define TEMPLATE_FAIL STATIC_ASSERTION_FAILURE<false>()
 #define TEMPLATE_FAIL
 
-#define PANIC(msg) assert((fprintf(stderr, "%s\n", msg), fflush(stderr), false))
-#define Ping  (fflush(stdout), fprintf(stderr, "%s %d\n", __FILE__, __LINE__), fflush(stderr))
+#define PANIC(msg) assert((printf("%s\n", msg), fflush(stderr), false))
+#define Ping  (fflush(stdout), printf("%s %d\n", __FILE__, __LINE__), fflush(stderr))
 
 #define INITIALIZER(tag) struct Initializer_ ## tag {  Initializer_ ## tag(); } static Initializer_ ## tag ## _instance; Initializer_ ## tag:: Initializer_ ## tag(void)
 #define FINALIZER(  tag) struct Finalizer_   ## tag { ~Finalizer_   ## tag(); } static Finalizer_   ## tag ## _instance; Finalizer_   ## tag::~Finalizer_   ## tag(void)

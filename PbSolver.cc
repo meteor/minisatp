@@ -181,7 +181,7 @@ bool PbSolver::normalizePb(vec<Lit>& ps, vec<Int>& Cs, Int& C)
     Int     sum = 0;
     for (int i = 0; i < Csps.size(); i++){
         Cs[i] = Csps[i].fst, ps[i] = Csps[i].snd, sum += Cs[i];
-        if (sum < 0) fprintf(stderr, "ERROR! Too large constants encountered in constraint.\n"), exit(1);
+        if (sum < 0) printf("ERROR! Too large constants encountered in constraint.\n"), exit(1);
     }
     ps.shrink(ps.size() - Csps.size());
     Cs.shrink(Cs.size() - Csps.size());
