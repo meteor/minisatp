@@ -76,7 +76,8 @@ template<class T> macro T max(T x, T y) { return (x > y) ? x : y; }
 
 template <bool> struct STATIC_ASSERTION_FAILURE;
 template <> struct STATIC_ASSERTION_FAILURE<true>{};
-#define TEMPLATE_FAIL STATIC_ASSERTION_FAILURE<false>()
+//#define TEMPLATE_FAIL STATIC_ASSERTION_FAILURE<false>()
+#define TEMPLATE_FAIL
 
 #define PANIC(msg) assert((fprintf(stderr, "%s\n", msg), fflush(stderr), false))
 #define Ping  (fflush(stdout), fprintf(stderr, "%s %d\n", __FILE__, __LINE__), fflush(stderr))

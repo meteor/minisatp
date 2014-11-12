@@ -19,6 +19,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 #include "Debug.h"
 
+using Minisat::l_True;
+using Minisat::l_False;
 
 vec<cchar*>* debug_names = NULL;
 

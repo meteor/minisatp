@@ -23,6 +23,8 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 
 extern int verbosity;
 
+using Minisat::l_True;
+using Minisat::l_False;
 
 //=================================================================================================
 // Interface required by parser:
