@@ -46,6 +46,7 @@ class StackAlloc : public Allocator<T> {
 
 public:
     StackAlloc(void) { init(); }
+    virtual ~StackAlloc(void) { freeAll(); }
 
     T* alloc(int n) {
         if (index + n <= cap) { T* tmp = data+index; index += n; return tmp; }
