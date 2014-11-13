@@ -272,6 +272,17 @@ PbSolver::solve_Command convert(Command cmd) {
 
 //=================================================================================================
 
+extern "C" {
+  PbSolver *yo() {
+    printf("YO!\n");
+    // allocate a PbSolver and don't free it
+    PbSolver*   a_solver = new PbSolver(true);
+    return a_solver;
+  }
+  void unyo(PbSolver *s) {
+    delete s;
+  }
+}
 
 int main(int argc, char** argv)
 {
