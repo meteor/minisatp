@@ -1,0 +1,129 @@
+
+extern "C" {
+
+  PbSolver *yo() {
+    printf("YO!\n");
+    // allocate a PbSolver and don't free it
+    PbSolver*   a_solver = new PbSolver(true);
+    return a_solver;
+  }
+  void unyo(PbSolver *s) {
+    delete s;
+  }
+  void freeBytes(char *b) {
+    delete []b;
+  }
+  char boardTemp[] = {'1', ',', '1', 0};
+  Lit board(PbSolver *solver, int r, int c) {
+    char *tmp = boardTemp;
+    tmp[0] = '0' + r;
+    tmp[2] = '0' + c;
+    return mkLit(solver->getVar(tmp));
+  }
+  char * eightQueens(int queenRow, int queenColumn) {
+    // require a queen in (row,column) (between 1 and 8!)
+    char *result = new char[64];
+    
+    opt_verbosity = 0;
+    opt_convert = ct_Adders; // seems to speed up example
+    // PbSolver arg is whether to use variable elimination.
+    // For 8 queens, turning it off seems to save a little time.
+    PbSolver* solver = new PbSolver(false);
+
+    vec<Lit> vars;
+    vec<Int> coeffs;
+    Int one(1);
+
+    bool noConflicts = true;
+
+    // At most one queen per row
+    for (int r = 1; r <= 8; r++) {
+      vars.clear();
+      coeffs.clear();
+      for (int c = 1; c <= 8; c++) {
+        vars.push(board(solver,r,c));
+        coeffs.push(one);
+      }
+      if (! solver->addConstr(vars, coeffs, one, -1))
+        noConflicts = false;
+    }
+
+    // At most one queen per column
+    for (int c = 1; c <= 8; c++) {
+      vars.clear();
+      coeffs.clear();
+      for (int r = 1; r <= 8; r++) {
+        vars.push(board(solver,r,c));
+        coeffs.push(one);
+      }
+      if (! solver->addConstr(vars, coeffs, one, -1))
+        noConflicts = false;
+    }
+
+    // Eight queens
+    vars.clear();
+    coeffs.clear();
+    for (int c = 1; c <= 8; c++) {
+      for (int r = 1; r <= 8; r++) {
+        vars.push(board(solver,r,c));
+        coeffs.push(one);
+      }
+    }
+    if (! solver->addConstr(vars, coeffs, Int(8), 0))
+      noConflicts = false;
+
+    // At most one queen per diagonal.  A diagonal
+    // consists of squares whose row + column sums
+    // to a constant, or the horizontal flip of
+    // such a set of squares.
+    for (int flip = 0; flip <= 1; flip++) {
+      for (int sum = 2; sum <= 16; sum++) {
+        vars.clear();
+        coeffs.clear();
+        for (int r = 1; r <= sum-1; r++) {
+          int c = sum - r;
+          if (flip)
+            c = 9-c;
+          if (r >= 1 && r <= 8 && c >= 1 && c <= 8) {
+            vars.push(board(solver,r,c));
+            coeffs.push(one);
+          }
+        }
+        if (! solver->addConstr(vars, coeffs, one, -1))
+          noConflicts = false;
+      }
+    }
+
+    // There's a queen in (queenRow,queenColumn)
+    vars.clear();
+    coeffs.clear();
+    vars.push(board(solver, queenRow, queenColumn));
+    coeffs.push(one);
+    if (! solver->addConstr(vars, coeffs, one, 0))
+      noConflicts = false;
+    
+    // Now, solve.
+    
+    if (! noConflicts) {
+      result[0] = -1;
+    } else {
+      solver->solve(PbSolver::sc_FirstSolution);
+      if (! solver->okay()) {
+        result[0] = -2;
+      } else {
+        int i = 0;
+        for (int r = 1; r <= 8; r++) {
+          for (int c = 1; c <= 8; c++) {
+            result[i] = (solver->best_model[var(board(solver,r,c))] ?
+                         1 : 0);
+            i++;
+          }
+        }
+      }
+    }
+
+    delete solver;
+    
+    return result; // must be dealloced by caller
+  }
+}

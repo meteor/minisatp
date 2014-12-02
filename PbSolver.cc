@@ -304,7 +304,7 @@ void PbSolver::propagate()
     if (nVars() == 0) return;
     if (occur.size() == 0) setupOccurs();
 
-    if (opt_verbosity >= 1) reportf("  -- Unit propagations: ", constrs.size());
+    //    if (opt_verbosity >= 1) reportf("  -- Unit propagations: ", constrs.size());
     bool found = false;
 
     while (propQ_head < trail.size()){

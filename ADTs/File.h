@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #include <sys/stat.h>
 
 #define lseek64 lseek   // }- (disable explicit 64-bit support for FreeBSD...)
+#undef open64 // I have no idea what I'm doing, just prevent a duplicate warning on Mac
 #define open64  ::open  // }
 
 
