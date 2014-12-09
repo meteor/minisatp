@@ -273,7 +273,7 @@ PbSolver::solve_Command convert(Command cmd) {
 
 //=================================================================================================
 
-int main(int argc, char** argv)
+int old_main(int argc, char** argv)
 {
     /*DEBUG*/if (argc > 1 && (strcmp(argv[1], "-debug") == 0 || strcmp(argv[1], "--debug") == 0)){ void test(); test(); exit(0); }
 
@@ -345,3 +345,8 @@ void test(void)
 //=================================================================================================
 
 #include "Meteor.cc.include"
+
+int main(int argc, char** argv) {
+  
+  return 0;
+}
