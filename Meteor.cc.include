@@ -1,6 +1,27 @@
 
 extern "C" {
 
+  // Receives a null-terminated, newline-delimited list of strings.
+  // Counts the non-empty ones.
+  int countLines(char *lines) {
+    char *ptr = lines;
+    char *lineStart = ptr;
+    int count = 0;
+    while (*ptr) {
+      if (*ptr == '\n') {
+        if (ptr > lineStart) {
+          count++;
+        }
+        lineStart = (ptr + 1);
+      }
+      ptr++;
+    }
+    if (ptr > lineStart) {
+      count++;
+    }
+    return count;
+  };
+       
   PbSolver *yo() {
     printf("YO!\n");
     // allocate a PbSolver and don't free it
