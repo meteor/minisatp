@@ -1,4 +1,6 @@
 // (start of emscripten-preamble.js)
+cMinisatp = function () {
+  var module = {};
 // Put emscripten in "node mode" but don't give it the real `process`
 // object.  It does have access to `console`.
 var require = function () {};

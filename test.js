@@ -1,4 +1,5 @@
-var Module = require('./build/minisatp.js');
+
+var Module = require('./build/minisatp.js')();
 
 console.log(Module.MEMSTATS);
 var ptr = Module._yo();

@@ -50,4 +50,12 @@ _free = hookedFree;
 var setInnerMalloc, setInnerFree; // assigned from the "midamble"
 setInnerMalloc(hookedMalloc);
 setInnerFree(hookedFree);
+
+  return module.exports;
+};
+// Just so we can also run as a node module via
+// `cMinisat = require('minisatp.js')()`:
+if (typeof module !== 'undefined') {
+  module.exports = cMinisatp;
+}
 // (end of emscripten-postamble.js)
