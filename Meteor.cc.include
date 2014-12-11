@@ -1,27 +1,112 @@
 
+// NOTE: These functions needed to be listed in "make-emscripten.sh" to
+// be picked up by the compiler!
+
 extern "C" {
 
-  // Receives a null-terminated, newline-delimited list of strings.
-  // Counts the non-empty ones.
-  int countLines(char *lines) {
-    char *ptr = lines;
-    char *lineStart = ptr;
-    int count = 0;
-    while (*ptr) {
-      if (*ptr == '\n') {
-        if (ptr > lineStart) {
-          count++;
-        }
-        lineStart = (ptr + 1);
+  // One global solver.  We instantiate the entire C environment
+  // per JavaScript solver object.
+  PbSolver *SOLVER;
+  void createTheSolver() {
+    // Argument to PbSolver is whether to use variable elimination.
+    // Presumably it provides some speed-up for some problems,
+    // after some initial cost is paid.  For the "eight queens" problem
+    // it seemed to slow things down.
+    SOLVER = new PbSolver(false);
+  }
+
+  // Turns "\n\nFOO\n\nBAR\n" into "FOO\0BAR\0" in place and returns
+  // a pointer that points after the end (in this case, str+8).
+  // In other words, splits on '\n', removes empty strings, and
+  // replaces str with a series of null-terminated strings.
+  // We use this so that native functions can receive a "list" of
+  // strings from JavaScript in the form of a single string.
+  char * splitInPlace(char *str) {
+    // out <= in
+    char *out = str;
+    char *in = str;
+    while (*in) {
+      while (*in == '\n') {
+        in++;
       }
+      if (*in) {
+        while (*in && *in != '\n') {
+          *out++ = *in++;
+        }
+        if (*in == '\n') {
+          in++;
+        }
+        *out++ = '\0';
+      }
+    }
+    return out;
+  }
+
+  // Advance ptr forward to the position after the next null,
+  // skipping one null-terminated string.
+  void nextString(char *&ptr) {
+    while (*ptr) {
       ptr++;
     }
-    if (ptr > lineStart) {
+    ptr++;
+  }
+
+#define LINES_OF(ARG, VAR) char *VAR = (ARG), *_end_ = splitInPlace(VAR); \
+  VAR < _end_; nextString(VAR)
+  
+  // Receives a null-terminated, newline-delimited list of strings.
+  // Counts the non-empty ones.
+  // This is a demo for iterating over the lines of a string.
+  int countLines(char *lines) {
+    int count = 0;
+    for (LINES_OF(lines, line)) {
       count++;
     }
     return count;
   };
-       
+
+  void addClause(char *positive, char *negative) {
+    vec<Lit> vars;
+    for (LINES_OF(positive, v)) {
+      vars.push(mkLit(SOLVER->getVar(v)));
+    }
+    for (LINES_OF(negative, v)) {
+      vars.push(mkLit(SOLVER->getVar(v), true));
+    }
+    SOLVER->addClause(vars);
+  }
+
+  bool solve() {
+    SOLVER->solve(PbSolver::sc_FirstSolution);
+    return !! SOLVER->okay();
+  }
+
+  int getNumVariables() {
+    return SOLVER->index2name.size();
+  }
+
+  int getVariableIndex(char *v) {
+    int ret;
+    if (! SOLVER->name2index.peek(v, ret)) {
+      return -1;
+    } else {
+      return ret;
+    }
+  }
+
+  const char * getVariableAtIndex(int index) {
+    return SOLVER->index2name[index];
+  }
+
+  // solution is put into `out` as 0s and 1s.  `out`
+  // must have space!  `getNumVariables()` tells you
+  // how big it needs to be.
+  void getSolution(char *out) {
+    for (int i = 0; i < SOLVER->best_model.size(); i++) {
+      out[i] = SOLVER->best_model[i] ? 1 : 0;
+    }
+  }
+    
   PbSolver *yo() {
     printf("YO!\n");
     // allocate a PbSolver and don't free it

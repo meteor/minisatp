@@ -1,5 +1,6 @@
-
+console.time('Loading module');
 var Module = require('./build/minisatp.js')();
+console.timeEnd('Loading module');
 
 console.log(Module.MEMSTATS);
 var ptr = Module._yo();

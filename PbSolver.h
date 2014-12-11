@@ -71,7 +71,7 @@ public:
 
 
 class PbSolver {
-protected:
+ public://protected:
     SimpSolver          sat_solver;     // Underlying SAT solver.
     vec<Lit>            trail;          // Chronological assignment stack.
 
@@ -80,7 +80,7 @@ protected:
 public:
     vec<Linear*>        constrs;        // Vector with all constraints.
     Linear*             goal;           // Non-normalized goal function (used in optimization). NULL means no goal function specified. NOTE! We are always minimizing.
-protected:
+ public://protected:
     vec<int>            n_occurs;       // Lit -> int: Number of occurrences.
     vec<vec<int> >      occur;          // Lit -> vec<int>: Occur lists. Left empty until 'setupOccurs()' is called.
 
