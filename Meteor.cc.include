@@ -8,6 +8,9 @@ extern "C" {
   // per JavaScript solver object.
   PbSolver *SOLVER;
   void createTheSolver() {
+    opt_verbosity = 0; // prevent print calls that aren't ported to emscripten
+    opt_convert = ct_Adders; // seemed to speed up eight queens
+    
     // Argument to PbSolver is whether to use variable elimination.
     // Presumably it provides some speed-up for some problems,
     // after some initial cost is paid.  For the "eight queens" problem
@@ -74,6 +77,19 @@ extern "C" {
       vars.push(mkLit(SOLVER->getVar(v), true));
     }
     SOLVER->addClause(vars);
+  }
+
+  // type: -2 for `<`, -1 for `<=`, 0 for `=`, 1 for `>=`, 2 for `>`
+  void addConstraint(char *vars, int *coeffs, int type, int rhs) {
+    vec<Lit> varsVec;
+    vec<Int> coeffsVec;
+    int i = 0;
+    for (LINES_OF(vars, v)) {
+      varsVec.push(mkLit(SOLVER->getVar(v)));
+      coeffsVec.push(Int(coeffs[i]));
+      i++;
+    }
+    SOLVER->addConstr(varsVec, coeffsVec, Int(rhs), type);
   }
 
   bool solve() {
