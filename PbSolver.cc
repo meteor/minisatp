@@ -35,6 +35,10 @@ int PbSolver::getVar(cchar* name)
     int ret;
     if (!name2index.peek(name, ret)){
         // Create new variable:
+        while (index2name.size() < sat_solver.nVars()) {
+          // account for underlying variables we don't know about
+          index2name.push("");
+        }
         Var x = index2name.size();
         index2name.push(xstrdup(name));
         n_occurs  .push(0);
@@ -63,7 +67,7 @@ void PbSolver::addGoal(const vec<Lit>& ps, const vec<Int>& Cs)
 }
 
 
-bool PbSolver::addConstr(const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int ineq)
+bool PbSolver::addConstr(const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int ineq, Var *conditionalVar)
 {
     //**/debug_names = &index2name;
     //**/static cchar* ineq_name[5] = { "<", "<=" ,"==", ">=", ">" };
@@ -78,11 +82,11 @@ bool PbSolver::addConstr(const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int in
 
     if (ineq == 0){
         Copy;
-        if (normalizePb(norm_ps, norm_Cs, norm_rhs))
+        if (normalizePb(norm_ps, norm_Cs, norm_rhs, conditionalVar))
             storePb(norm_ps, norm_Cs, norm_rhs, Int_MAX); //**/reportf("STORED: "), dump(constrs.last()), reportf("\n");
 
         CopyInv;
-        if (normalizePb(norm_ps, norm_Cs, norm_rhs))
+        if (normalizePb(norm_ps, norm_Cs, norm_rhs, conditionalVar))
             storePb(norm_ps, norm_Cs, norm_rhs, Int_MAX); //**/reportf("STORED: "), dump(constrs.last()), reportf("\n");
 
     }else{
@@ -95,7 +99,7 @@ bool PbSolver::addConstr(const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int in
         if (ineq == 2)
             ++norm_rhs;
 
-        if (normalizePb(norm_ps, norm_Cs, norm_rhs))
+        if (normalizePb(norm_ps, norm_Cs, norm_rhs, conditionalVar))
             storePb(norm_ps, norm_Cs, norm_rhs, Int_MAX); //**/reportf("STORED: "), dump(constrs.last()), reportf("\n");
     }
 
@@ -124,7 +128,7 @@ static Int gcd(Int small, Int big) {
 // satisfied or determined contradictory. The vectors 'ps' and 'Cs' should ONLY be used if
 // TRUE is returned.
 //
-bool PbSolver::normalizePb(vec<Lit>& ps, vec<Int>& Cs, Int& C)
+bool PbSolver::normalizePb(vec<Lit>& ps, vec<Int>& Cs, Int& C, Var *conditionalVar)
 {
     assert(ps.size() == Cs.size());
     if (!okay()) return false;
@@ -192,20 +196,27 @@ bool PbSolver::normalizePb(vec<Lit>& ps, vec<Int>& Cs, Int& C)
     do{
         changed = false;
         while (ps.size() > 0 && sum-Cs.last() < C){
-            changed = true;
+          changed = true;
+          if (conditionalVar) {
+            sat_solver.addClause(mkLit(*conditionalVar, true),
+                                 ps.last());
+          } else {
             if (!addUnit(ps.last())){
-                sat_solver.addEmptyClause();;
-                return false; }
-            sum -= Cs.last();
-            C   -= Cs.last();
-            ps.pop(); Cs.pop();
+              sat_solver.addEmptyClause();
+              return false;
+            }
+          }
+          sum -= Cs.last();
+          C   -= Cs.last();
+          ps.pop(); Cs.pop();
         }
 
         // Trivially true or false?
         if (C <= 0)
             return false;
         if (sum < C){
-            sat_solver.addEmptyClause();
+            (conditionalVar ? sat_solver.addClause(mkLit(*conditionalVar, true)) :
+             sat_solver.addEmptyClause());
             return false; }
         assert(sum - Cs[ps.size()-1] >= C);
 
@@ -554,9 +565,9 @@ void PbSolver::solve(solve_Command cmd)
             n_solutions++;
             reportf("MODEL# %d:", n_solutions);
             for (Var x = 0; x < pb_n_vars; x++){
-                assert(sat_solver.model[x] != l_Undef);
-                ban.push(mkLit(x, sat_solver.model[x] == l_True));
-                reportf(" %s%s", (sat_solver.model[x] == l_False)?"-":"", index2name[x]);
+                assert(sat_solver.modelValue(x) != l_Undef);
+                ban.push(mkLit(x, sat_solver.modelValue(x) == l_True));
+                reportf(" %s%s", (sat_solver.modelValue(x) == l_False)?"-":"", index2name[x]);
             }
             reportf("\n");
             sat_solver.addClause(ban);
@@ -564,13 +575,13 @@ void PbSolver::solve(solve_Command cmd)
         }else{
             best_model.clear();
             for (Var x = 0; x < pb_n_vars; x++)
-                assert(sat_solver.model[x] != l_Undef),
-                best_model.push(sat_solver.model[x] == l_True);
+              assert(sat_solver.modelValue(x) != l_Und{{ef),
+                best_model.push(sat_solver.modelValue(x) == l_True);
 
             if (goal == NULL)   // ((fix: moved here Oct 4, 2005))
                 break;
 
-            best_goalvalue = evalGoal(*goal, sat_solver.model);
+            best_goalvalue = evalGoal(*goal, sat_solver.getModel());
             if (cmd == sc_FirstSolution) break;
 
             if (opt_verbosity >= 1){
@@ -602,7 +613,7 @@ void PbSolver::solve(solve_Command cmd)
 }
 
 void PbSolver::printStats()
-{
+{/*
     double cpu_time = Minisat::cpuTime();
     double mem_used = Minisat::memUsedPeak();
     printf("restarts              : %"PRIu64"\n", sat_solver.starts);
@@ -612,4 +623,4 @@ void PbSolver::printStats()
     printf("conflict literals     : %-12"PRIu64"   (%4.2f %% deleted)\n", sat_solver.tot_literals, (sat_solver.max_literals - sat_solver.tot_literals)*100 / (double)sat_solver.max_literals);
     if (mem_used != 0) printf("Memory used           : %.2f MB\n", mem_used);
     printf("CPU time              : %g s\n", cpu_time);
-}
+ */}

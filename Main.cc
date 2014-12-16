@@ -333,7 +333,7 @@ void test(void)
     printf("f= %d\n", index(f));
     printf("g= %d\n", index(g));
 
-    SimpSolver      S;
+    SolverBridge      S;
     vec<Formula>    fs;
     fs.push(f ^ g);
     clausify(S, fs);

@@ -27,7 +27,7 @@ Formula convertToBdd   (const Linear& c, int max_cost = INT_MAX);   // From: PbS
 //-------------------------------------------------------------------------------------------------
 
 
-bool PbSolver::convertPbs(bool first_call)
+bool PbSolver::convertPbs(bool first_call, Var *conditionalVar)
 {
     vec<Formula>    converted_constrs;
 
@@ -75,7 +75,18 @@ bool PbSolver::convertPbs(bool first_call)
     constrs.clear();
     mem.clear();
 
-    clausify(sat_solver, converted_constrs);
+    if (! conditionalVar) {
+      clausify(sat_solver, converted_constrs);
+    } else {
+      // Instead of adding a clause that says "x is true"
+      // for each variable x that comes out of clausify,
+      // add a clause that says "conditionalVar implies x".
+      vec<Lit> out;
+      clausify(sat_solver, converted_constrs, out);
+      Lit notVar = mkLit(*conditionalVar, true);
+      for (int i = 0; i < out.size(); i++)
+        sat_solver.addClause(notVar, out[i]);
+    }
 
     return okay();
 }

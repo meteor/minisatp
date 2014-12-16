@@ -33,6 +33,7 @@ using Minisat::lbool;
 using Minisat::mkLit;
 using Minisat::lit_Undef;
 using Minisat::l_Undef;
+using Minisat::var_Undef;
 
 //=================================================================================================
 // Linear -- a class for storing pseudo-boolean constraints:
@@ -69,10 +70,134 @@ public:
 //=================================================================================================
 // PbSolver -- Pseudo-boolean solver (linear boolean constraints):
 
+class SolverBridge {
+ public:
+  SimpSolver underlying;
+
+  Minisat::vec<Lit> add_tmp;
+
+  int verbosity;
+  bool debug_logNewClauses;
+  Var conditionalVar;
+
+ SolverBridge() : verbosity(0), debug_logNewClauses(false),
+    conditionalVar(var_Undef) {}
+
+  void setConditionalVar(Var &v) {
+    conditionalVar = v;
+  }
+
+  void clearConditionalVar() {
+    conditionalVar = var_Undef;
+  }
+  
+  bool addClause_(Minisat::vec<Lit>& ps) {
+    if (conditionalVar != var_Undef) {
+      ps.push(mkLit(conditionalVar, true));
+    }
+    if (debug_logNewClauses) {
+      printf("Adding clause (%d)\n", ps.size());
+      for (int i = 0; i < ps.size(); i++) {
+        printf("%s%d\n", sign(ps[i]) ? "-" : "", var(ps[i]));
+      }
+    }
+    return underlying.addClause_(ps);
+  }
+  
+  bool addClause(const Minisat::vec<Lit>& ps) {
+    ps.copyTo(add_tmp);
+    return addClause_(add_tmp);
+  }
+  bool addEmptyClause() {
+    add_tmp.clear();
+    return addClause_(add_tmp);
+  }
+  bool addClause(Lit p) {
+    add_tmp.clear();
+    add_tmp.push(p);
+    return addClause_(add_tmp);
+  }
+  bool addClause(Lit p, Lit q) {
+    add_tmp.clear();
+    add_tmp.push(p);
+    add_tmp.push(q);
+    return addClause_(add_tmp);
+  }
+  bool addClause(Lit p, Lit q, Lit r) {
+    add_tmp.clear();
+    add_tmp.push(p);
+    add_tmp.push(q);
+    add_tmp.push(r);
+    return addClause_(add_tmp);
+  }
+  bool addClause(Lit p, Lit q, Lit r, Lit s) {
+    add_tmp.clear();
+    add_tmp.push(p);
+    add_tmp.push(q);
+    add_tmp.push(r);add_tmp.push(s);
+    return addClause_(add_tmp);
+  }
+  
+  bool okay() {
+    return underlying.okay();
+  }
+
+  bool eliminate(bool turn_off_elim = false) {
+    return underlying.eliminate(turn_off_elim);
+  }
+
+  lbool value(Var x) const {
+    return underlying.value(x);
+  }
+  
+  lbool value(Lit p) const {
+    return underlying.value(p);
+  }
+
+  int nVars() const {
+    return underlying.nVars();
+  }
+
+  bool solve() {
+    return underlying.solve();
+  }
+  
+  bool solve(const Minisat::vec<Lit> &assumps) {
+    return underlying.solve(assumps, true, false);
+  }
+
+  lbool modelValue(Var x) const {
+    return underlying.modelValue(x);
+  }
+
+  Minisat::vec<lbool> & getModel() {
+    return underlying.model;
+  }
+
+  Var newVar (lbool upol = l_Undef, bool dvar = true) {
+    return underlying.newVar(upol, dvar);
+  }
+  
+  void setFrozen(Var v, bool b) {
+    underlying.setFrozen(v, b);
+  }
+
+  void setPolarity(Var v, lbool b) {
+    underlying.setPolarity(v, b);
+  }
+
+  void toDimacs(const char* file) {}
+
+  bool isEliminated(Var v) const {
+    return underlying.isEliminated(v);
+  }
+  
+};
+
 
 class PbSolver {
  public://protected:
-    SimpSolver          sat_solver;     // Underlying SAT solver.
+    SolverBridge        sat_solver;     // Underlying SAT solver.
     vec<Lit>            trail;          // Chronological assignment stack.
 
     StackAlloc<char*>   mem;            // Used to allocate the 'Linear' constraints stored in 'constrs' (other 'Linear's, such as the goal function, are allocated with 'xmalloc()')
@@ -98,12 +223,12 @@ public:
         tmp_clause.clear(); for (int i = 0; i < ps.size(); i++) tmp_clause.push(ps[i]);
         return sat_solver.addClause_(tmp_clause); }
         
-    bool    normalizePb(vec<Lit>& ps, vec<Int>& Cs, Int& C);
+    bool    normalizePb(vec<Lit>& ps, vec<Int>& Cs, Int& C, Var *conditionalVar);
     void    storePb    (const vec<Lit>& ps, const vec<Int>& Cs, Int lo, Int hi);
     void    setupOccurs();   // Called on demand from 'propagate()'.
     void    findIntervals();
     bool    rewriteAlmostClauses();
-    bool    convertPbs(bool first_call);   // Called from 'solve()' to convert PB constraints to clauses.
+    bool    convertPbs(bool first_call, Var* conditionalVar = NULL);   // Called from 'solve()' to convert PB constraints to clauses.
 
 public:
     PbSolver(bool use_preprocessing = false) 
@@ -145,7 +270,7 @@ public:
     int     getVar      (cchar* name);
     void    allocConstrs(int n_vars, int n_constrs);
     void    addGoal     (const vec<Lit>& ps, const vec<Int>& Cs);
-    bool    addConstr   (const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int ineq);
+    bool    addConstr   (const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int ineq, Var *conditionalVar = NULL);
 
     // Solve:
     //
