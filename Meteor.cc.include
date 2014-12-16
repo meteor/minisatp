@@ -12,9 +12,9 @@ extern "C" {
     opt_convert = ct_Adders; // seemed to speed up eight queens
     
     // Argument to PbSolver is whether to use variable elimination.
-    // Presumably it provides some speed-up for some problems,
-    // after some initial cost is paid.  For the "eight queens" problem
-    // it seemed to slow things down.
+    // We turn it off because it complicates incremental solving
+    // (and performance was worse if anything in an example problem
+    // anyway).
     SOLVER = new PbSolver(false);
   }
 
@@ -89,14 +89,62 @@ extern "C" {
       coeffsVec.push(Int(coeffs[i]));
       i++;
     }
-    SOLVER->addConstr(varsVec, coeffsVec, Int(rhs), type);
+    SOLVER->addConstr(varsVec, coeffsVec, Int(rhs), type);      
   }
-
+  
+  // Only call solve() once.  Then call solveAgain() (after possibly
+  // adding some constraints).
   bool solve() {
     SOLVER->solve(PbSolver::sc_FirstSolution);
     return !! SOLVER->okay();
   }
 
+  // Call this after solve() and before setting or clearing
+  // the conditionalVar (which affects how clauses are added)
+  void flushConstraintsAfterSolve() {
+    SOLVER->convertPbs(false);
+  }
+
+  int enterConditional() {
+    flushConstraintsAfterSolve();
+    Var x = SOLVER->sat_solver.newVar();
+    SOLVER->sat_solver.setConditionalVar(x);
+    return x;
+  }
+
+  void exitConditional() {
+    flushConstraintsAfterSolve();
+    SOLVER->sat_solver.clearConditionalVar();
+  }
+  
+  // Call this only after calling solve() once.  You can call it
+  // as many times as you want, adding constraints in between.
+  // Can't add new vars after solving ones.
+  // Pass -1 to solve again with no conditionalVar.
+  bool solveAgain(int conditionalVar) {
+    // important bits copied from the innards of PbSolver::solve
+    if (! SOLVER->okay()) {
+      return false;
+    }
+    flushConstraintsAfterSolve();
+    SolverBridge *sat_solver = &SOLVER->sat_solver;
+    Minisat::vec<Lit> assumps;
+    if (conditionalVar >= 0) {
+      assumps.push(mkLit(Var(conditionalVar)));
+    }
+    if (! sat_solver->solve(assumps)) {
+      return false;
+    }
+
+    vec<bool> *best_model = &SOLVER->best_model;
+    best_model->clear();
+    int pb_n_vars = SOLVER->pb_n_vars;
+    for (Var x = 0; x < pb_n_vars; x++)
+      best_model->push(sat_solver->modelValue(x) == Minisat::l_True);
+
+    return true;
+  }
+  
   int getNumVariables() {
     return SOLVER->index2name.size();
   }
@@ -122,7 +170,13 @@ extern "C" {
       out[i] = SOLVER->best_model[i] ? 1 : 0;
     }
   }
-    
+
+  void setDebugLogNewClauses(bool b) {
+    SOLVER->sat_solver.debug_logNewClauses = b;
+  }
+  
+  //// Everything below is just for testing/sanity-checking the compiled
+  //// code.
   PbSolver *yo() {
     printf("YO!\n");
     // allocate a PbSolver and don't free it
@@ -248,4 +302,54 @@ extern "C" {
     
     return result; // must be dealloced by caller
   }
+
+  using Minisat::l_True;
+
+  void incrementalSolveTest() {
+    using Minisat::vec;
+    
+    SolverBridge solver;
+    solver.eliminate(true); // turn off elimination
+    vec<Lit> all;
+    all.push(mkLit(solver.newVar()));
+    all.push(mkLit(solver.newVar()));
+    all.push(mkLit(solver.newVar()));
+    all.push(mkLit(solver.newVar()));
+    all.push(mkLit(solver.newVar()));
+    for (int i=0; i<5; i++) {
+      for (int j=i+1; j<5; j++) {
+        solver.addClause(~all[i], ~all[j]);
+      }
+    }
+    solver.addClause(all);
+    solver.solve();
+    printf("%d %d %d %d %d\n",
+           solver.modelValue(0) == l_True ? 1 : 0,
+           solver.modelValue(1) == l_True ? 1 : 0,
+           solver.modelValue(2) == l_True ? 1 : 0,
+           solver.modelValue(3) == l_True ? 1 : 0,
+           solver.modelValue(4) == l_True ? 1 : 0);
+
+    Lit cv = mkLit(solver.newVar());
+    for (int i=0; i<5; i++) {
+      solver.addClause(~cv, ~all[i]);
+    }
+
+    vec<Lit> assumps;
+    assumps.push(cv);
+    bool result = solver.solve(assumps);
+
+    // should be "0: ..." (and the ... doesn't matter)
+    printf("%d: %d %d %d %d %d %d\n",
+           result,
+           solver.modelValue(0) == l_True ? 1 : 0,
+           solver.modelValue(1) == l_True ? 1 : 0,
+           solver.modelValue(2) == l_True ? 1 : 0,
+           solver.modelValue(3) == l_True ? 1 : 0,
+           solver.modelValue(4) == l_True ? 1 : 0,
+           solver.modelValue(5) == l_True ? 1 : 0);
+
+  }
+
+  
 }

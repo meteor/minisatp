@@ -31,8 +31,8 @@ void oddEvenSort(vec<Formula>& fs);
 void rippleAdder(const vec<Formula>& xs, const vec<Formula>& ys, vec<Formula>& out);
 void addPb(const vec<Formula>& ps, const vec<Int>& Cs_, vec<Formula>& out, int bits);
 
-void clausify(SimpSolver& s, const vec<Formula>& fs, vec<Lit>& out);
-void clausify(SimpSolver& s, const vec<Formula>& fs);
+void clausify(SolverBridge& s, const vec<Formula>& fs, vec<Lit>& out);
+void clausify(SolverBridge& s, const vec<Formula>& fs);
 
 
 //=================================================================================================

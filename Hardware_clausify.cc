@@ -23,11 +23,11 @@ using Minisat::var_Undef;
 
 struct Clausifier
 {
-    SimpSolver&  s;
+    SolverBridge&  s;
     Minisat::vec<Lit> tmp_clause;
     vec<Formula> tmp_marked;
 
-    Clausifier(SimpSolver& _s) : s(_s) {}
+    Clausifier(SolverBridge& _s) : s(_s) {}
 
     static /*WARNING*/ CMap<int>      occ;
     static /*WARNING*/ CMap<Var>      vmap;
@@ -311,7 +311,7 @@ Lit Clausifier::basicClausify(Formula f)
 }
 
 
-void clausify(SimpSolver& s, const vec<Formula>& fs, Minisat::vec<Lit>& out)
+void clausify(SolverBridge& s, const vec<Formula>& fs, vec<Lit>& out)
 {
     Clausifier c(s);
 
@@ -327,9 +327,9 @@ void clausify(SimpSolver& s, const vec<Formula>& fs, Minisat::vec<Lit>& out)
 }
 
 
-void clausify(SimpSolver& s, const vec<Formula>& fs)
+void clausify(SolverBridge& s, const vec<Formula>& fs)
 {
-    Minisat::vec<Lit>  out;
+    vec<Lit>  out;
     clausify(s, fs, out);
     for (int i = 0; i < out.size(); i++)
         s.addClause(out[i]);

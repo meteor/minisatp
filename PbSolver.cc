@@ -554,9 +554,9 @@ void PbSolver::solve(solve_Command cmd)
             n_solutions++;
             reportf("MODEL# %d:", n_solutions);
             for (Var x = 0; x < pb_n_vars; x++){
-                assert(sat_solver.model[x] != l_Undef);
-                ban.push(mkLit(x, sat_solver.model[x] == l_True));
-                reportf(" %s%s", (sat_solver.model[x] == l_False)?"-":"", index2name[x]);
+                assert(sat_solver.modelValue(x) != l_Undef);
+                ban.push(mkLit(x, sat_solver.modelValue(x) == l_True));
+                reportf(" %s%s", (sat_solver.modelValue(x) == l_False)?"-":"", index2name[x]);
             }
             reportf("\n");
             sat_solver.addClause(ban);
@@ -564,13 +564,13 @@ void PbSolver::solve(solve_Command cmd)
         }else{
             best_model.clear();
             for (Var x = 0; x < pb_n_vars; x++)
-                assert(sat_solver.model[x] != l_Undef),
-                best_model.push(sat_solver.model[x] == l_True);
+              assert(sat_solver.modelValue(x) != l_Und{{ef),
+                best_model.push(sat_solver.modelValue(x) == l_True);
 
             if (goal == NULL)   // ((fix: moved here Oct 4, 2005))
                 break;
 
-            best_goalvalue = evalGoal(*goal, sat_solver.model);
+            best_goalvalue = evalGoal(*goal, sat_solver.getModel());
             if (cmd == sc_FirstSolution) break;
 
             if (opt_verbosity >= 1){
@@ -602,7 +602,7 @@ void PbSolver::solve(solve_Command cmd)
 }
 
 void PbSolver::printStats()
-{
+{/*
     double cpu_time = Minisat::cpuTime();
     double mem_used = Minisat::memUsedPeak();
     printf("restarts              : %"PRIu64"\n", sat_solver.starts);
@@ -612,4 +612,4 @@ void PbSolver::printStats()
     printf("conflict literals     : %-12"PRIu64"   (%4.2f %% deleted)\n", sat_solver.tot_literals, (sat_solver.max_literals - sat_solver.tot_literals)*100 / (double)sat_solver.max_literals);
     if (mem_used != 0) printf("Memory used           : %.2f MB\n", mem_used);
     printf("CPU time              : %g s\n", cpu_time);
-}
+ */}

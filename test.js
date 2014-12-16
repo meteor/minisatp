@@ -2,11 +2,16 @@ console.time('Loading module');
 var Module = require('./build/minisatp.js')();
 console.timeEnd('Loading module');
 
+//Module._incrementalSolveTest();
+
+
 console.log(Module.MEMSTATS);
 var ptr = Module._yo();
 console.log(Module.MEMSTATS);
 Module._unyo(ptr);
 console.log(Module.MEMSTATS);
+
+
 
 var T = Date.now();
 var queensResultPtr = Module._eightQueens(1, 1);
