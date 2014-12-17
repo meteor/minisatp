@@ -62,9 +62,37 @@ void PbSolver::addGoal(const vec<Lit>& ps, const vec<Int>& Cs)
     goal = new (xmalloc<char>(sizeof(Linear) + ps.size()*(sizeof(Lit) + sizeof(Int)))) Linear(ps, Cs, Int_MIN, Int_MAX);
 }
 
+void dumpConstraint(const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int ineq) {
+  char buf[10000];
+  int numTerms = ps.size();
+  char *ptr = buf;
+  *ptr = 0;
+  for (int i = 0; i < numTerms; i++) {
+    int n = toint(Cs[i]);
+    bool sgn = sign(ps[i]);
+    int v = var(ps[i]);
+    sprintf(ptr, "%d*%sx%d ", n, sgn ? "~" : "", v);
+    while (*ptr) ptr++;
+  }
+  switch (ineq) {
+  case -2: sprintf(ptr, "< "); break;
+  case -1: sprintf(ptr, "<= "); break;
+  case 0: sprintf(ptr, "= "); break;
+  case 1: sprintf(ptr, ">= "); break;
+  case 2: sprintf(ptr, "> "); break;
+  default: sprintf(ptr, "(?%d?) ", ineq); break;
+  }
+  while (*ptr) ptr++;
+  sprintf(ptr, "%d", toint(rhs));
+  while (*ptr) ptr++;
+  printf("%s\n", buf);
+}
+
 
 bool PbSolver::addConstr(const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int ineq)
 {
+  dumpConstraint(ps, Cs, rhs, ineq);
+  
     //**/debug_names = &index2name;
     //**/static cchar* ineq_name[5] = { "<", "<=" ,"==", ">=", ">" };
     //**/reportf("CONSTR: "); dump(ps, Cs, assigns); reportf(" %s ", ineq_name[ineq+2]); dump(rhs); reportf("\n");
@@ -133,8 +161,10 @@ bool PbSolver::normalizePb(vec<Lit>& ps, vec<Int>& Cs, Int& C)
     int new_sz = 0;
     for (int i = 0; i < ps.size(); i++){
         if (value(ps[i]) != l_Undef){
-            if (value(ps[i]) == l_True)
-                C -= Cs[i];
+          if (value(ps[i]) == l_True) {
+            C -= Cs[i];
+            printf("DROPPED: %d\n", var(ps[i]));
+          }
         }else if (Cs[i] != 0){
             ps[new_sz] = ps[i];
             Cs[new_sz] = Cs[i];

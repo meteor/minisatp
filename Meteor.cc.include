@@ -171,8 +171,22 @@ extern "C" {
     }
   }
 
+  // n can be greater than getNumVariables(), to provide access
+  // to unnamed SAT variables
+  bool getSolutionVariable(int n) {
+    return SOLVER->sat_solver.modelValue(n) == Minisat::l_True ? 1 : 0;
+  }
+
   void setDebugLogNewClauses(bool b) {
     SOLVER->sat_solver.debug_logNewClauses = b;
+  }
+
+  int getClauseLogSize() {
+    return SOLVER->sat_solver.allClauseLog.size();
+  }
+  
+  int * getClauseLog() {
+    return (int *)(SOLVER->sat_solver.allClauseLog);
   }
   
   //// Everything below is just for testing/sanity-checking the compiled

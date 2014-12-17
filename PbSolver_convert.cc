@@ -26,6 +26,29 @@ Formula buildConstraint(const Linear& c, int max_cost = INT_MAX);   // From: PbS
 Formula convertToBdd   (const Linear& c, int max_cost = INT_MAX);   // From: PbSolver_convertBdd.C
 //-------------------------------------------------------------------------------------------------
 
+void dumpStoredConstraint(Linear &c) {
+  char buf[10000];
+  int numTerms = c.size;
+  char *ptr = buf;
+  *ptr = 0;
+  for (int i = 0; i < numTerms; i++) {
+    Lit lit = c[i];
+    int n = toint(c(i));
+    bool sgn = sign(lit);
+    int v = var(lit);
+    sprintf(ptr, "%d*%sx%d ", n, sgn ? "~" : "", v);
+    while (*ptr) ptr++;
+  }
+  if (c.lo == Int_MIN) {
+    sprintf(ptr, "<= %d", toint(c.hi));
+  } else if (c.hi == Int_MAX) {
+    sprintf(ptr, ">= %d", toint(c.lo));    
+  } else {
+    sprintf(ptr, " in %d..%d", toint(c.lo), toint(c.hi));
+  }
+  while (*ptr) ptr++;
+  printf("STORED: %s\n", buf);
+}
 
 bool PbSolver::convertPbs(bool first_call)
 {
@@ -42,6 +65,8 @@ bool PbSolver::convertPbs(bool first_call)
         if (constrs[i] == NULL) continue;
         Linear& c   = *constrs[i]; assert(c.lo != Int_MIN || c.hi != Int_MAX);
 
+        dumpStoredConstraint(c);
+        
         if (opt_verbosity >= 1)
             /**/reportf("---[%4d]---> ", constrs.size() - 1 - i);
 

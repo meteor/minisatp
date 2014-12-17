@@ -80,6 +80,10 @@ class SolverBridge {
   bool debug_logNewClauses;
   Var conditionalVar;
 
+  // each var is represented as (+/-) (v+1), and each clause
+  // is terminated by a 0.
+  Minisat::vec<int> allClauseLog;
+
  SolverBridge() : verbosity(0), debug_logNewClauses(false),
     conditionalVar(var_Undef) {}
 
@@ -95,12 +99,21 @@ class SolverBridge {
     if (conditionalVar != var_Undef) {
       ps.push(mkLit(conditionalVar, true));
     }
+    
     if (debug_logNewClauses) {
       printf("Adding clause (%d)\n", ps.size());
       for (int i = 0; i < ps.size(); i++) {
         printf("%s%d\n", sign(ps[i]) ? "-" : "", var(ps[i]));
       }
     }
+    
+    int idx = allClauseLog.size();
+    allClauseLog.growTo(idx + ps.size() + 1);
+    for (int i = 0; i < ps.size(); i++) {
+      allClauseLog[idx++] = (var(ps[i]) + 1) * (sign(ps[i]) ? -1 : 1);
+    }
+    allClauseLog[idx] = 0;
+    
     return underlying.addClause_(ps);
   }
   

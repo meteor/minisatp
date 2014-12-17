@@ -9,12 +9,12 @@ var process = {
   on: function () {},
   stdout: {
     write: function (str) {
-      console.log("MINISAT-out:", str);
+      console.log("MINISAT-out:", str.replace(/\n$/, ''));
     }
   },
   stderr: {
     write: function (str) {
-      console.log("MINISAT-err:", str);
+      console.log("MINISAT-err:", str.replace(/\n$/, ''));
     }
   }
 };
