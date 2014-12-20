@@ -144,6 +144,10 @@ extern "C" {
 
     return true;
   }
+
+  void retireVar(int varNum) {
+    SOLVER->sat_solver.releaseVar(mkLit(Var(varNum), true));
+  }
   
   int getNumVariables() {
     return SOLVER->index2name.size();

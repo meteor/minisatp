@@ -204,7 +204,11 @@ class SolverBridge {
   bool isEliminated(Var v) const {
     return underlying.isEliminated(v);
   }
-  
+
+  void releaseVar(Lit l) {
+    underlying.releaseVar(l);
+  }
+    
 };
 
 
