@@ -65,7 +65,7 @@ bool PbSolver::convertPbs(bool first_call)
         if (constrs[i] == NULL) continue;
         Linear& c   = *constrs[i]; assert(c.lo != Int_MIN || c.hi != Int_MAX);
 
-        dumpStoredConstraint(c);
+        //dumpStoredConstraint(c);
         
         if (opt_verbosity >= 1)
             /**/reportf("---[%4d]---> ", constrs.size() - 1 - i);

@@ -91,7 +91,7 @@ void dumpConstraint(const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int ineq) {
 
 bool PbSolver::addConstr(const vec<Lit>& ps, const vec<Int>& Cs, Int rhs, int ineq)
 {
-  dumpConstraint(ps, Cs, rhs, ineq);
+  //dumpConstraint(ps, Cs, rhs, ineq);
   
     //**/debug_names = &index2name;
     //**/static cchar* ineq_name[5] = { "<", "<=" ,"==", ">=", ">" };
@@ -160,7 +160,7 @@ bool PbSolver::normalizePb(vec<Lit>& ps, vec<Int>& Cs, Int& C)
     // Remove assigned literals and literals with zero coefficients:
     int new_sz = 0;
     for (int i = 0; i < ps.size(); i++){
-        if (value(ps[i]) != l_Undef){
+      if (value(ps[i]) != l_Undef && false){ // XXXXX
           if (value(ps[i]) == l_True) {
             C -= Cs[i];
             printf("DROPPED: %d\n", var(ps[i]));
@@ -223,9 +223,10 @@ bool PbSolver::normalizePb(vec<Lit>& ps, vec<Int>& Cs, Int& C)
         changed = false;
         while (ps.size() > 0 && sum-Cs.last() < C){
             changed = true;
-            if (!addUnit(ps.last())){
-                sat_solver.addEmptyClause();;
-                return false; }
+            //            if (!addUnit(ps.last())){
+            //                sat_solver.addEmptyClause();;
+            //                return false; }
+            sat_solver.addClause(ps.last());
             sum -= Cs.last();
             C   -= Cs.last();
             ps.pop(); Cs.pop();
